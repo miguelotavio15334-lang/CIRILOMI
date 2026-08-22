@@ -1,0 +1,78 @@
+-- CIRILIMINU HUB - DELTA FIX (SEM ERRO)
+repeat task.wait() until game:IsLoaded()
+
+local success, Fluent = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"))()
+end)
+
+if not success then
+    warn("Fluent falhou, usando hub simples")
+    getgenv().AutoFarm = true
+    local plr = game.Players.LocalPlayer
+    local base = plr.Character.HumanoidRootPart.CFrame
+    while task.wait(0.3) do
+        pcall(function()
+            local tool = plr.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                plr.Character.HumanoidRootPart.CFrame = base
+            else
+                for _,v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then fireproximityprompt(v) end
+                end
+            end
+        end)
+    end
+    return
+end
+
+local Window = Fluent:CreateWindow({
+    Title = "CiriliMinu 🤡",
+    SubTitle = "Roube um Palhaço - DELTA",
+    TabWidth = 150,
+    Size = UDim2.fromOffset(480, 350),
+    Acrylic = false,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.End
+})
+
+local Tabs = { Main = Window:AddTab({ Title = "🤡 FARM", Icon = "" }) }
+local plr = game.Players.LocalPlayer
+local Root = plr.Character:WaitForChild("HumanoidRootPart")
+local baseCFrame = Root.CFrame
+
+Tabs.Main:AddButton({Title = "SALVAR BASE (clica aqui na tua base)", Callback = function()
+    baseCFrame = plr.Character.HumanoidRootPart.CFrame
+    Fluent:Notify({Title = "OK!", Content = "Base salva!", Duration = 2})
+end})
+
+Tabs.Main:AddToggle("AutoFarm", {Title = "AUTO FARM PALHAÇO", Default = false}):OnChanged(function(v) getgenv().AutoFarm = v end)
+Tabs.Main:AddToggle("Kitar", {Title = "KITAR APÓS ROUBAR", Default = false}):OnChanged(function(v) getgenv().AutoKit = v end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.25)
+        if getgenv().AutoFarm then
+            pcall(function()
+                local hasTool = plr.Character:FindFirstChildOfClass("Tool")
+                if hasTool and baseCFrame then
+                    Root.CFrame = baseCFrame
+                    if getgenv().AutoKit then task.wait(1) game.Players.LocalPlayer:Kick("Roubado 🤡") end
+                else
+                    for _,v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("ProximityPrompt") and v.Enabled then
+                            local hrp = v.Parent:FindFirstChild("HumanoidRootPart") or v.Parent.Parent:FindFirstChild("HumanoidRootPart")
+                            if hrp and (hrp.Position - Root.Position).Magnitude < 600 then
+                                Root.CFrame = hrp.CFrame
+                                task.wait(0.2)
+                                fireproximityprompt(v)
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+Fluent:Notify({Title = "CiriliMinu", Content = "Executou! Salva a base e liga o farm", Duration = 4})
