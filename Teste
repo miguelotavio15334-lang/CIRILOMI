@@ -1,88 +1,90 @@
--- CIRILIMINU HUB - DO ZERO - SÓ ROUBA, NÃO COMPRA NADA
+-- HUB SEM FLUENT - EXECUTA 100% NO DELTA - SEM AUTO BUY
 repeat task.wait() until game:IsLoaded()
-
-local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"))()
-local Window = Fluent:CreateWindow({
-    Title = "Roube um Palhaço 🤡",
-    SubTitle = "V1 - Sem Auto Buy",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(480, 340),
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.End
-})
-
-local Tabs = { Main = Window:AddTab({ Title = "🤡 Roubar", Icon = "home" }) }
-
 local plr = game.Players.LocalPlayer
-local Root = plr.Character:WaitForChild("HumanoidRootPart")
-local minhaBase = nil
+local char = plr.Character or plr.CharacterAdded:Wait()
+local Root = char:WaitForChild("HumanoidRootPart")
 
--- 1. SALVAR BASE
-Tabs.Main:AddButton({
-    Title = "Salvar Minha Base",
-    Description = "Fica dentro da tua base e clica",
-    Callback = function()
-        minhaBase = Root.CFrame
-        Fluent:Notify({Title = "Base Salva!", Content = "Agora pode ligar o farm", Duration = 3})
-    end
-})
+-- CRIA GUI SIMPLES
+if game.CoreGui:FindFirstChild("CiriliHub") then game.CoreGui.CiriliHub:Destroy() end
+local gui = Instance.new("ScreenGui")
+gui.Name = "CiriliHub"
+gui.Parent = gethui and gethui() or game.CoreGui
+gui.ResetOnSpawn = false
 
--- 2. AUTO ROUBAR
-getgenv().Roubar = false
-Tabs.Main:AddToggle("Roubar", {
-    Title = "Auto Roubar Palhaço", 
-    Description = "Pega e traz pra base",
-    Default = false
-}):OnChanged(function(v)
-    getgenv().Roubar = v
-    if v and not minhaBase then
-        minhaBase = Root.CFrame
-        Fluent:Notify({Title = "Aviso", Content = "Salvei tua base automatico", Duration = 2})
-    end
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.fromOffset(250, 180)
+frame.Position = UDim2.fromOffset(50, 100)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BorderSizePixel = 0
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.fromOffset(250, 40)
+title.Text = "🤡 Roube um Palhaço"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+
+local base = nil
+local farming = false
+local kitar = false
+
+local function btn(text, y, callback)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.fromOffset(220, 35)
+    b.Position = UDim2.fromOffset(15, y)
+    b.Text = text
+    b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.Gotham
+    b.TextScaled = true
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(callback)
+    return b
+end
+
+btn("1. SALVAR MINHA BASE", 45, function()
+    base = Root.CFrame
+    title.Text = "✅ Base Salva!"
+    task.wait(1)
+    title.Text = "🤡 Roube um Palhaço"
 end)
 
--- 3. KITAR
-getgenv().Kitar = false
-Tabs.Main:AddToggle("Kitar", {
-    Title = "Kitar após roubar",
-    Default = false
-}):OnChanged(function(v) getgenv().Kitar = v end)
+local farmBtn = btn("2. AUTO ROUBAR: OFF", 90, function()
+    farming = not farming
+    farmBtn.Text = farming and "2. AUTO ROUBAR: ON" or "2. AUTO ROUBAR: OFF"
+    farmBtn.BackgroundColor3 = farming and Color3.fromRGB(0,170,0) or Color3.fromRGB(40,40,40)
+    if farming and not base then base = Root.CFrame title.Text = "Base auto salva!" end
+end)
 
--- LOOP LIMPO - SÓ PROCURA PALHAÇO
+local kitBtn = btn("KITAR: OFF", 135, function()
+    kitar = not kitar
+    kitBtn.Text = kitar and "KITAR: ON" or "KITAR: OFF"
+end)
+
+-- LOOP DO FARM (SEM AUTO BUY)
 task.spawn(function()
-    while true do
-        task.wait(0.4)
-        if getgenv().Roubar and minhaBase then
+    while true do task.wait(0.35)
+        if farming and base then
             pcall(function()
-                local char = plr.Character
-                if not char then return end
-                local tool = char:FindFirstChildOfClass("Tool")
-
+                local tool = plr.Character:FindFirstChildOfClass("Tool")
                 if tool then
-                    -- TO COM PALHAÇO = LEVA PRA BASE
-                    Root.CFrame = minhaBase + Vector3.new(0,3,0)
-                    task.wait(1)
-                    if getgenv().Kitar then
-                        plr:Kick("Roubado com sucesso 🤡")
-                    end
+                    Root.CFrame = base + Vector3.new(0,3,0)
+                    if kitar then task.wait(1) plr:Kick("Roubado 🤡") end
                 else
-                    -- TO SEM PALHAÇO = PROCURA UM PRA ROUBAR
-                    -- Procura só modelo de palhaço no workspace
-                    for _,obj in pairs(workspace:GetDescendants()) do
-                        if obj:IsA("ProximityPrompt") then
-                            local texto = (obj.ActionText .. obj.ObjectText):lower()
-                            -- SÓ ROUBA SE FOR ROUBAR
-                            if texto:find("roub") then
-                                local modelo = obj.Parent
-                                local hrp = modelo:FindFirstChild("HumanoidRootPart") or modelo.Parent:FindFirstChild("HumanoidRootPart")
-                                if hrp then
-                                    local dist = (hrp.Position - Root.Position).Magnitude
-                                    if dist < 500 and dist > 10 then
-                                        Root.CFrame = hrp.CFrame + Vector3.new(0,0,3)
-                                        task.wait(0.3)
-                                        fireproximityprompt(obj)
-                                        break
-                                    end
+                    for _,v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("ProximityPrompt") and v.Enabled then
+                            local txt = (v.ActionText..v.ObjectText):lower()
+                            if txt:find("roub") and not txt:find("comprar") and not txt:find("buy") then
+                                local hrp = v.Parent:FindFirstChild("HumanoidRootPart") or v.Parent.Parent:FindFirstChild("HumanoidRootPart")
+                                if hrp and (hrp.Position - Root.Position).Magnitude < 400 then
+                                    Root.CFrame = hrp.CFrame + Vector3.new(0,0,3)
+                                    task.wait(0.25)
+                                    fireproximityprompt(v)
+                                    break
                                 end
                             end
                         end
@@ -93,5 +95,4 @@ task.spawn(function()
     end
 end)
 
-Fluent:Notify({Title = "Hub Carregado!", Content = "Do zero, sem auto buy. Salva a base primeiro.", Duration = 5})
-Window:SelectTab(1)
+print("Cirili Hub carregado - SEM FLUENT")
