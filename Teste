@@ -1,71 +1,88 @@
--- ANTI-COMPRA + ANTI-SPAM - COLA ESSE AGORA
--- Bloqueia qualquer tela de compra
-
--- 1. BLOQUEIA TELA DE 59 ROBUX
-game:GetService("MarketplaceService").PromptPurchaseRequested:Connect(function()
-    return -- cancela compra
-end)
-
--- 2. FECHA TELA DE COMPRA AUTOMATICO
-game:GetService("CoreGui").ChildAdded:Connect(function(gui)
-    task.wait(0.1)
-    pcall(function()
-        if gui.Name:find("Purchase") or gui.Name:find("Comprar") then
-            gui:Destroy()
-        end
-    end)
-end)
-
+-- CIRILIMINU HUB - DO ZERO - SÓ ROUBA, NÃO COMPRA NADA
 repeat task.wait() until game:IsLoaded()
+
 local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"))()
 local Window = Fluent:CreateWindow({
-    Title = "CiriliMinu ANTI-BUY",
-    SubTitle = "Não compra mais nada",
-    TabWidth = 160, Size = UDim2.fromOffset(500, 350),
-    Theme = "Dark", MinimizeKey = Enum.KeyCode.End
+    Title = "Roube um Palhaço 🤡",
+    SubTitle = "V1 - Sem Auto Buy",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 340),
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.End
 })
-local Tabs = { Main = Window:AddTab({ Title = "FARM", Icon = "home" }) }
+
+local Tabs = { Main = Window:AddTab({ Title = "🤡 Roubar", Icon = "home" }) }
 
 local plr = game.Players.LocalPlayer
 local Root = plr.Character:WaitForChild("HumanoidRootPart")
-local baseCFrame = nil
+local minhaBase = nil
 
-Tabs.Main:AddButton({Title = "1 - SALVAR BASE", Callback = function()
-    baseCFrame = Root.CFrame
-    Fluent:Notify({Title = "Salvo!", Content = "Base salva", Duration = 2})
-end})
+-- 1. SALVAR BASE
+Tabs.Main:AddButton({
+    Title = "Salvar Minha Base",
+    Description = "Fica dentro da tua base e clica",
+    Callback = function()
+        minhaBase = Root.CFrame
+        Fluent:Notify({Title = "Base Salva!", Content = "Agora pode ligar o farm", Duration = 3})
+    end
+})
 
-getgenv().Farm = false
-Tabs.Main:AddToggle("Farm", {Title = "ROUBAR PALHAÇO (SEM COMPRAR)", Default = false}):OnChanged(function(v) getgenv().Farm = v end)
+-- 2. AUTO ROUBAR
+getgenv().Roubar = false
+Tabs.Main:AddToggle("Roubar", {
+    Title = "Auto Roubar Palhaço", 
+    Description = "Pega e traz pra base",
+    Default = false
+}):OnChanged(function(v)
+    getgenv().Roubar = v
+    if v and not minhaBase then
+        minhaBase = Root.CFrame
+        Fluent:Notify({Title = "Aviso", Content = "Salvei tua base automatico", Duration = 2})
+    end
+end)
 
--- LISTA NEGRA DE COISA QUE NÃO PODE ROUBAR
-local BLACKLIST = {"base", "desbloq", "comprar", "buy", "unlock", "porta", "door", "cash", "moeda"}
+-- 3. KITAR
+getgenv().Kitar = false
+Tabs.Main:AddToggle("Kitar", {
+    Title = "Kitar após roubar",
+    Default = false
+}):OnChanged(function(v) getgenv().Kitar = v end)
 
+-- LOOP LIMPO - SÓ PROCURA PALHAÇO
 task.spawn(function()
-    while true do task.wait(0.5)
-        if getgenv().Farm and baseCFrame then
+    while true do
+        task.wait(0.4)
+        if getgenv().Roubar and minhaBase then
             pcall(function()
-                if plr.Character:FindFirstChildOfClass("Tool") then
-                    Root.CFrame = baseCFrame + Vector3.new(0,4,0)
+                local char = plr.Character
+                if not char then return end
+                local tool = char:FindFirstChildOfClass("Tool")
+
+                if tool then
+                    -- TO COM PALHAÇO = LEVA PRA BASE
+                    Root.CFrame = minhaBase + Vector3.new(0,3,0)
+                    task.wait(1)
+                    if getgenv().Kitar then
+                        plr:Kick("Roubado com sucesso 🤡")
+                    end
                 else
-                    -- PROCURA SÓ O PALHAÇO NO CHÃO, NÃO O BOTÃO DE COMPRAR BASE
-                    for _,v in pairs(workspace:GetDescendants()) do
-                        if v.Name == "Palhaço" or v.Name == "Clown" or v.Name:lower():find("clown") then
-                            local hrp = v:FindFirstChild("HumanoidRootPart") or v.Parent:FindFirstChild("HumanoidRootPart")
-                            if hrp and (hrp.Position - Root.Position).Magnitude < 300 and v.Parent:FindFirstChildOfClass("ProximityPrompt") then
-                                local prompt = v.Parent:FindFirstChildOfClass("ProximityPrompt")
-                                -- VERIFICA SE NÃO É LOJA
-                                local isShop = false
-                                for _,b in pairs(BLACKLIST) do
-                                    if prompt.ObjectText:lower():find(b) or prompt.ActionText:lower():find(b) then
-                                        isShop = true
+                    -- TO SEM PALHAÇO = PROCURA UM PRA ROUBAR
+                    -- Procura só modelo de palhaço no workspace
+                    for _,obj in pairs(workspace:GetDescendants()) do
+                        if obj:IsA("ProximityPrompt") then
+                            local texto = (obj.ActionText .. obj.ObjectText):lower()
+                            -- SÓ ROUBA SE FOR ROUBAR
+                            if texto:find("roub") then
+                                local modelo = obj.Parent
+                                local hrp = modelo:FindFirstChild("HumanoidRootPart") or modelo.Parent:FindFirstChild("HumanoidRootPart")
+                                if hrp then
+                                    local dist = (hrp.Position - Root.Position).Magnitude
+                                    if dist < 500 and dist > 10 then
+                                        Root.CFrame = hrp.CFrame + Vector3.new(0,0,3)
+                                        task.wait(0.3)
+                                        fireproximityprompt(obj)
+                                        break
                                     end
-                                end
-                                if not isShop then
-                                    Root.CFrame = hrp.CFrame + Vector3.new(0,0,3)
-                                    task.wait(0.3)
-                                    fireproximityprompt(prompt)
-                                    break
                                 end
                             end
                         end
@@ -76,21 +93,5 @@ task.spawn(function()
     end
 end)
 
--- 3. AUTO FECHA O POPUP AZUL DE COMPRAR
-task.spawn(function()
-    while true do
-        task.wait(0.2)
-        pcall(function()
-            for _,gui in pairs(game:GetService("CoreGui"):GetDescendants()) do
-                if gui:IsA("TextLabel") and gui.Text:find("Você precisa de") then
-                    gui.Parent.Parent:Destroy()
-                end
-            end
-            -- fecha gui de comprar item do Roblox
-            local purchase = game:GetService("CoreGui"):FindFirstChild("PurchasePromptApp")
-            if purchase then purchase:FindFirstChild("PurchasePrompt"):Destroy() end
-        end)
-    end
-end)
-
-Fluent:Notify({Title = "Anti-Buy Ativo", Content = "Agora não compra mais base, só rouba palhaço", Duration = 4})
+Fluent:Notify({Title = "Hub Carregado!", Content = "Do zero, sem auto buy. Salva a base primeiro.", Duration = 5})
+Window:SelectTab(1)
